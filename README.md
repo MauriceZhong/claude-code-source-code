@@ -58,6 +58,139 @@ please contact the repository owner for immediate removal.
 
 ---
 
+## Directory Reference
+
+```
+src/
+├── main.tsx                 # REPL bootstrap, 4,683 lines
+├── QueryEngine.ts           # SDK/headless query lifecycle engine
+├── query.ts                 # Main agent loop (785KB, largest file)
+├── Tool.ts                  # Tool interface + buildTool factory
+├── Task.ts                  # Task types, IDs, state base
+├── tools.ts                 # Tool registry, presets, filtering
+├── commands.ts              # Slash command definitions
+├── context.ts               # User input context
+├── cost-tracker.ts          # API cost accumulation
+├── setup.ts                 # First-run setup flow
+│
+├── bridge/                  # Claude Desktop / remote bridge
+│   ├── bridgeMain.ts        #   Session lifecycle manager
+│   ├── bridgeApi.ts         #   HTTP client
+│   ├── bridgeConfig.ts      #   Connection config
+│   ├── bridgeMessaging.ts   #   Message relay
+│   ├── sessionRunner.ts     #   Process spawning
+│   ├── jwtUtils.ts          #   JWT refresh
+│   ├── workSecret.ts        #   Auth tokens
+│   └── capacityWake.ts      #   Capacity-based wakeup
+│
+├── cli/                     # CLI infrastructure
+│   ├── handlers/            #   Command handlers
+│   └── transports/          #   I/O transports (stdio, structured)
+│
+├── commands/                # ~80 slash commands
+│   ├── agents/              #   Agent management
+│   ├── compact/             #   Context compaction
+│   ├── config/              #   Settings management
+│   ├── help/                #   Help display
+│   ├── login/               #   Authentication
+│   ├── mcp/                 #   MCP server management
+│   ├── memory/              #   Memory system
+│   ├── plan/                #   Plan mode
+│   ├── resume/              #   Session resume
+│   ├── review/              #   Code review
+│   └── ...                  #   70+ more commands
+│
+├── components/              # React/Ink terminal UI
+│   ├── design-system/       #   Reusable UI primitives
+│   ├── messages/            #   Message rendering
+│   ├── permissions/         #   Permission dialogs
+│   ├── PromptInput/         #   Input field + suggestions
+│   ├── LogoV2/              #   Branding + welcome screen
+│   ├── Settings/            #   Settings panels
+│   ├── Spinner.tsx          #   Loading indicators
+│   └── ...                  #   40+ component groups
+│
+├── entrypoints/             # Application entry points
+│   ├── cli.tsx              #   CLI main (version, help, daemon)
+│   ├── sdk/                 #   Agent SDK (types, sessions)
+│   └── mcp.ts               #   MCP server entry
+│
+├── hooks/                   # React hooks
+│   ├── useCanUseTool.tsx    #   Permission checking
+│   ├── useReplBridge.tsx    #   Bridge connection
+│   ├── notifs/              #   Notification hooks
+│   └── toolPermission/      #   Tool permission handlers
+│
+├── services/                # Business logic layer
+│   ├── api/                 #   Claude API client
+│   │   ├── claude.ts        #     Streaming API calls
+│   │   ├── errors.ts        #     Error categorization
+│   │   └── withRetry.ts     #     Retry logic
+│   ├── analytics/           #   Telemetry + GrowthBook
+│   ├── compact/             #   Context compression
+│   ├── mcp/                 #   MCP connection management
+│   ├── tools/               #   Tool execution engine
+│   │   ├── StreamingToolExecutor.ts  # Parallel tool runner
+│   │   └── toolOrchestration.ts      # Batch orchestration
+│   ├── plugins/             #   Plugin loader
+│   └── settingsSync/        #   Cross-device settings
+│
+├── state/                   # Application state
+│   ├── AppStateStore.ts     #   Store definition
+│   └── AppState.tsx         #   React provider + hooks
+│
+├── tasks/                   # Task implementations
+│   ├── LocalShellTask/      #   Bash command execution
+│   ├── LocalAgentTask/      #   Sub-agent execution
+│   ├── RemoteAgentTask/     #   Remote agent via bridge
+│   ├── InProcessTeammateTask/ # In-process teammate
+│   └── DreamTask/           #   Background thinking
+│
+├── tools/                   # 40+ tool implementations
+│   ├── AgentTool/           #   Sub-agent spawning + fork
+│   ├── BashTool/            #   Shell command execution
+│   ├── FileReadTool/        #   File reading (PDF, image, etc)
+│   ├── FileEditTool/        #   String-replace editing
+│   ├── FileWriteTool/       #   Full file creation
+│   ├── GlobTool/            #   File pattern search
+│   ├── GrepTool/            #   Content search (ripgrep)
+│   ├── WebFetchTool/        #   HTTP fetching
+│   ├── WebSearchTool/       #   Web search
+│   ├── MCPTool/             #   MCP tool wrapper
+│   ├── SkillTool/           #   Skill invocation
+│   ├── AskUserQuestionTool/ #   User interaction
+│   └── ...                  #   30+ more tools
+│
+├── types/                   # Type definitions
+│   ├── message.ts           #   Message discriminated unions
+│   ├── permissions.ts       #   Permission types
+│   ├── tools.ts             #   Tool progress types
+│   └── ids.ts               #   Branded ID types
+│
+├── utils/                   # Utilities (largest directory)
+│   ├── permissions/         #   Permission rule engine
+│   ├── messages/            #   Message formatting
+│   ├── model/               #   Model selection logic
+│   ├── settings/            #   Settings management
+│   ├── sandbox/             #   Sandbox runtime adapter
+│   ├── hooks/               #   Hook execution
+│   ├── memory/              #   Memory system utils
+│   ├── git/                 #   Git operations
+│   ├── github/              #   GitHub API
+│   ├── bash/                #   Bash execution helpers
+│   ├── swarm/               #   Multi-agent swarm
+│   ├── telemetry/           #   Telemetry reporting
+│   └── ...                  #   30+ more util groups
+│
+└── vendor/                  # Native module source stubs
+    ├── audio-capture-src/   #   Audio input
+    ├── image-processor-src/ #   Image processing
+    ├── modifiers-napi-src/  #   Native modifiers
+    └── url-handler-src/     #   URL handling
+```
+
+---
+
 ## Architecture Overview
 
 ```
@@ -598,139 +731,6 @@ This source code demonstrates 12 layered mechanisms that a production AI agent h
 | **Fire-and-Forget Write** | `recordTranscript()` | Non-blocking persistence with ordering |
 | **Lazy Schema** | `lazySchema()` | Defer Zod schema evaluation for performance |
 | **Context Isolation** | `AsyncLocalStorage` | Per-agent context in shared process |
-
----
-
-## Directory Reference
-
-```
-src/
-├── main.tsx                 # REPL bootstrap, 4,683 lines
-├── QueryEngine.ts           # SDK/headless query lifecycle engine
-├── query.ts                 # Main agent loop (785KB, largest file)
-├── Tool.ts                  # Tool interface + buildTool factory
-├── Task.ts                  # Task types, IDs, state base
-├── tools.ts                 # Tool registry, presets, filtering
-├── commands.ts              # Slash command definitions
-├── context.ts               # User input context
-├── cost-tracker.ts          # API cost accumulation
-├── setup.ts                 # First-run setup flow
-│
-├── bridge/                  # Claude Desktop / remote bridge
-│   ├── bridgeMain.ts        #   Session lifecycle manager
-│   ├── bridgeApi.ts         #   HTTP client
-│   ├── bridgeConfig.ts      #   Connection config
-│   ├── bridgeMessaging.ts   #   Message relay
-│   ├── sessionRunner.ts     #   Process spawning
-│   ├── jwtUtils.ts          #   JWT refresh
-│   ├── workSecret.ts        #   Auth tokens
-│   └── capacityWake.ts      #   Capacity-based wakeup
-│
-├── cli/                     # CLI infrastructure
-│   ├── handlers/            #   Command handlers
-│   └── transports/          #   I/O transports (stdio, structured)
-│
-├── commands/                # ~80 slash commands
-│   ├── agents/              #   Agent management
-│   ├── compact/             #   Context compaction
-│   ├── config/              #   Settings management
-│   ├── help/                #   Help display
-│   ├── login/               #   Authentication
-│   ├── mcp/                 #   MCP server management
-│   ├── memory/              #   Memory system
-│   ├── plan/                #   Plan mode
-│   ├── resume/              #   Session resume
-│   ├── review/              #   Code review
-│   └── ...                  #   70+ more commands
-│
-├── components/              # React/Ink terminal UI
-│   ├── design-system/       #   Reusable UI primitives
-│   ├── messages/            #   Message rendering
-│   ├── permissions/         #   Permission dialogs
-│   ├── PromptInput/         #   Input field + suggestions
-│   ├── LogoV2/              #   Branding + welcome screen
-│   ├── Settings/            #   Settings panels
-│   ├── Spinner.tsx          #   Loading indicators
-│   └── ...                  #   40+ component groups
-│
-├── entrypoints/             # Application entry points
-│   ├── cli.tsx              #   CLI main (version, help, daemon)
-│   ├── sdk/                 #   Agent SDK (types, sessions)
-│   └── mcp.ts               #   MCP server entry
-│
-├── hooks/                   # React hooks
-│   ├── useCanUseTool.tsx    #   Permission checking
-│   ├── useReplBridge.tsx    #   Bridge connection
-│   ├── notifs/              #   Notification hooks
-│   └── toolPermission/      #   Tool permission handlers
-│
-├── services/                # Business logic layer
-│   ├── api/                 #   Claude API client
-│   │   ├── claude.ts        #     Streaming API calls
-│   │   ├── errors.ts        #     Error categorization
-│   │   └── withRetry.ts     #     Retry logic
-│   ├── analytics/           #   Telemetry + GrowthBook
-│   ├── compact/             #   Context compression
-│   ├── mcp/                 #   MCP connection management
-│   ├── tools/               #   Tool execution engine
-│   │   ├── StreamingToolExecutor.ts  # Parallel tool runner
-│   │   └── toolOrchestration.ts      # Batch orchestration
-│   ├── plugins/             #   Plugin loader
-│   └── settingsSync/        #   Cross-device settings
-│
-├── state/                   # Application state
-│   ├── AppStateStore.ts     #   Store definition
-│   └── AppState.tsx         #   React provider + hooks
-│
-├── tasks/                   # Task implementations
-│   ├── LocalShellTask/      #   Bash command execution
-│   ├── LocalAgentTask/      #   Sub-agent execution
-│   ├── RemoteAgentTask/     #   Remote agent via bridge
-│   ├── InProcessTeammateTask/ # In-process teammate
-│   └── DreamTask/           #   Background thinking
-│
-├── tools/                   # 40+ tool implementations
-│   ├── AgentTool/           #   Sub-agent spawning + fork
-│   ├── BashTool/            #   Shell command execution
-│   ├── FileReadTool/        #   File reading (PDF, image, etc)
-│   ├── FileEditTool/        #   String-replace editing
-│   ├── FileWriteTool/       #   Full file creation
-│   ├── GlobTool/            #   File pattern search
-│   ├── GrepTool/            #   Content search (ripgrep)
-│   ├── WebFetchTool/        #   HTTP fetching
-│   ├── WebSearchTool/       #   Web search
-│   ├── MCPTool/             #   MCP tool wrapper
-│   ├── SkillTool/           #   Skill invocation
-│   ├── AskUserQuestionTool/ #   User interaction
-│   └── ...                  #   30+ more tools
-│
-├── types/                   # Type definitions
-│   ├── message.ts           #   Message discriminated unions
-│   ├── permissions.ts       #   Permission types
-│   ├── tools.ts             #   Tool progress types
-│   └── ids.ts               #   Branded ID types
-│
-├── utils/                   # Utilities (largest directory)
-│   ├── permissions/         #   Permission rule engine
-│   ├── messages/            #   Message formatting
-│   ├── model/               #   Model selection logic
-│   ├── settings/            #   Settings management
-│   ├── sandbox/             #   Sandbox runtime adapter
-│   ├── hooks/               #   Hook execution
-│   ├── memory/              #   Memory system utils
-│   ├── git/                 #   Git operations
-│   ├── github/              #   GitHub API
-│   ├── bash/                #   Bash execution helpers
-│   ├── swarm/               #   Multi-agent swarm
-│   ├── telemetry/           #   Telemetry reporting
-│   └── ...                  #   30+ more util groups
-│
-└── vendor/                  # Native module source stubs
-    ├── audio-capture-src/   #   Audio input
-    ├── image-processor-src/ #   Image processing
-    ├── modifiers-napi-src/  #   Native modifiers
-    └── url-handler-src/     #   URL handling
-```
 
 ---
 
